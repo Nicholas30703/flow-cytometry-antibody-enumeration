@@ -30,38 +30,34 @@
             margin: 0 auto;
         }
         .panels {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
             margin-bottom: 1.5rem;
         }
         .panel {
             background: #fff;
             border: 1px solid #dee2e6;
             border-radius: 8px;
-            padding: 1rem;
-        }
-        .panel-header {
+            padding: 0.6rem 1rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 0.4rem;
-            margin-bottom: 0.6rem;
-            cursor: pointer;
+            gap: 0.75rem;
         }
-        .panel-header input[type="checkbox"] {
+        .panel-checkbox {
             width: 1rem;
             height: 1rem;
             cursor: pointer;
+            flex-shrink: 0;
         }
-        .panel-header h3 {
+        .panel-name {
             font-size: 0.95rem;
+            font-weight: 600;
             color: #0f3460;
-            margin: 0;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
-        .antibody-item {
-            padding: 0.15rem 0 0.15rem 1.5rem;
+        .panel-antibodies {
             font-size: 0.9rem;
             color: #495057;
         }
@@ -122,6 +118,8 @@
         <h1>Flow Cytometry Antibody Enumeration</h1>
         <p class="subtitle">Check panels to enumerate unique antibodies across your selection.</p>
 
+        <div id="panels" class="panels"></div>
+
         <div id="results">
             <h2>Unique Antibodies</h2>
             <div class="results-header">
@@ -130,8 +128,6 @@
             </div>
             <div class="antibody-list" id="antibody-list"></div>
         </div>
-
-        <div id="panels" class="panels"></div>
     </div>
 
     <script type="module" src="index.js"></script>

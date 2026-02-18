@@ -8,33 +8,28 @@ async function main() {
     const panelCheckboxes = [];
 
     for (const panel of panels) {
-        const div = document.createElement("div");
-        div.className = "panel";
-
-        const header = document.createElement("label");
-        header.className = "panel-header";
+        const row = document.createElement("label");
+        row.className = "panel";
 
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
+        checkbox.className = "panel-checkbox";
         checkbox.dataset.antibodies = JSON.stringify(panel.antibodies);
         checkbox.addEventListener("change", runEnumeration);
         panelCheckboxes.push(checkbox);
 
-        const h3 = document.createElement("h3");
-        h3.textContent = panel.name;
+        const name = document.createElement("span");
+        name.className = "panel-name";
+        name.textContent = panel.name;
 
-        header.appendChild(checkbox);
-        header.appendChild(h3);
-        div.appendChild(header);
+        const abs = document.createElement("span");
+        abs.className = "panel-antibodies";
+        abs.textContent = panel.antibodies.join(", ");
 
-        for (const ab of panel.antibodies) {
-            const item = document.createElement("div");
-            item.className = "antibody-item";
-            item.textContent = ab;
-            div.appendChild(item);
-        }
-
-        panelsContainer.appendChild(div);
+        row.appendChild(checkbox);
+        row.appendChild(name);
+        row.appendChild(abs);
+        panelsContainer.appendChild(row);
     }
 
     function runEnumeration() {

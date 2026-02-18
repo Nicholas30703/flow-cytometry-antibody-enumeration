@@ -1,0 +1,148 @@
+<div id="fcae-app">
+<style>
+#fcae-app { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1a1a2e; line-height: 1.6; max-width: 960px; margin: 0 auto; }
+#fcae-app h1 { text-align: center; margin-bottom: 0.5rem; font-size: 1.8rem; color: #16213e; }
+#fcae-app .subtitle { text-align: center; color: #6c757d; margin-bottom: 2rem; font-size: 0.95rem; }
+#fcae-app .panels { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+#fcae-app .panel { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 0.6rem 1rem; display: flex; align-items: center; gap: 0.75rem; cursor: pointer; }
+#fcae-app .panel-checkbox { width: 1rem; height: 1rem; cursor: pointer; flex-shrink: 0; }
+#fcae-app .panel-name { font-size: 0.95rem; font-weight: 600; color: #0f3460; white-space: nowrap; flex-shrink: 0; }
+#fcae-app .panel-antibodies { font-size: 0.9rem; color: #495057; }
+#fcae-app .results { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; display: none; }
+#fcae-app .results h2 { font-size: 1.2rem; color: #0f3460; margin-bottom: 0.8rem; }
+#fcae-app .results-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+#fcae-app .count-badge { display: inline-block; background: #0f3460; color: #fff; padding: 0.2rem 0.8rem; border-radius: 12px; font-size: 0.9rem; }
+#fcae-app .copy-btn { background: #0f3460; color: #fff; border: none; padding: 0.3rem 0.8rem; font-size: 0.85rem; border-radius: 6px; cursor: pointer; }
+#fcae-app .copy-btn:hover { background: #16213e; }
+#fcae-app .antibody-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+#fcae-app .antibody-tag { background: #e8f0fe; color: #0f3460; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.9rem; font-weight: 500; }
+</style>
+
+<h1>Flow Cytometry Antibody Enumeration</h1>
+<p class="subtitle">Check panels to enumerate unique antibodies across your selection.</p>
+<div class="panels" id="fcae-panels"></div>
+<div class="results" id="fcae-results">
+    <h2>Unique Antibodies</h2>
+    <div class="results-header">
+        <div class="count-badge" id="fcae-count"></div>
+        <button class="copy-btn" id="fcae-copy">Copy list to clipboard</button>
+    </div>
+    <div class="antibody-list" id="fcae-list"></div>
+</div>
+
+<script>
+(function() {
+    var panels = [
+        { name: "Screening Tube", antibodies: ["CD3","CD4","CD5","CD7","CD8","CD13","CD16","CD19","CD34","CD45","CD56","kappa","lambda"] },
+        { name: "Standard Tube 1 (T-cells)", antibodies: ["CD2","CD3","CD4","CD5","CD7","CD8","CD19","CD38","CD45","CD56"] },
+        { name: "Standard Tube 2 (B-cells)", antibodies: ["CD5","CD10","CD11c","CD19","CD20","CD23","CD45","CD200","kappa","lambda"] },
+        { name: "Standard Tube 3 (Myeloid)", antibodies: ["CD13","CD14","CD16","CD19","CD33","CD34","CD45","CD64","CD117","HLA-DR"] },
+        { name: "Plasma Cell", antibodies: ["CD19","CD20","CD38","CD45","CD56","CD81","CD117","CD138","kappa (cytoplasmic)","lambda (cytoplasmic)"] },
+        { name: "Acute Leukemia", antibodies: ["CD3 (cytoplasmic)","CD7","CD13","CD19","CD22 (cytoplasmic)","CD33","CD34","CD45","Myeloperoxidase (cytoplasmic)","TdT (cytoplasmic)"] },
+        { name: "Hairy Cell", antibodies: ["CD11c","CD19","CD20","CD22","CD25","CD45","CD79b","CD103","CD123","CD200"] },
+        { name: "LGL with TRBC1", antibodies: ["CD3","CD4","CD7","CD8","CD16","CD45","CD56","CD57","TCR-D/G","TRBC1"] },
+        { name: "6-Color Tube 2", antibodies: ["CD10","CD19","CD45","FMC7","kappa (cytoplasmic)","lambda (cytoplasmic)"] },
+        { name: "6-Color BAL", antibodies: ["CD3","CD4","CD8","CD19","CD45","HLA-DR"] },
+        { name: "6-Color Limited Lymph", antibodies: ["CD5","CD10","CD19","CD45","kappa (cytoplasmic)","lambda (cytoplasmic)"] }
+    ];
+
+    function sortKey(s) {
+        var lower = s.toLowerCase();
+        if (lower.indexOf("cd") === 0) {
+            var rest = lower.substring(2);
+            var match = rest.match(/^(\d+)(.*)/);
+            if (match) {
+                return "cd" + match[1].padStart(3, "0") + match[2];
+            }
+        }
+        return lower;
+    }
+
+    function enumerate(selected) {
+        var unique = Array.from(new Set(selected));
+        unique.sort(function(a, b) { return sortKey(a) < sortKey(b) ? -1 : sortKey(a) > sortKey(b) ? 1 : 0; });
+        var uniqueSet = new Set(unique);
+        var count = unique.filter(function(ab) {
+            if (ab.endsWith(" (cytoplasmic)")) {
+                var base = ab.slice(0, -" (cytoplasmic)".length);
+                return !uniqueSet.has(base);
+            }
+            return true;
+        }).length;
+        return { unique: unique, count: count };
+    }
+
+    panels.forEach(function(panel) {
+        panel.antibodies.sort(function(a, b) { return sortKey(a) < sortKey(b) ? -1 : sortKey(a) > sortKey(b) ? 1 : 0; });
+    });
+
+    var panelCheckboxes = [];
+    var currentList = [];
+    var container = document.getElementById("fcae-panels");
+
+    panels.forEach(function(panel) {
+        var row = document.createElement("label");
+        row.className = "panel";
+        var cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.className = "panel-checkbox";
+        cb.setAttribute("data-antibodies", JSON.stringify(panel.antibodies));
+        cb.addEventListener("change", runEnumeration);
+        panelCheckboxes.push(cb);
+        var name = document.createElement("span");
+        name.className = "panel-name";
+        name.textContent = panel.name;
+        var abs = document.createElement("span");
+        abs.className = "panel-antibodies";
+        abs.textContent = panel.antibodies.join(", ");
+        row.appendChild(cb);
+        row.appendChild(name);
+        row.appendChild(abs);
+        container.appendChild(row);
+    });
+
+    function runEnumeration() {
+        var selected = [];
+        panelCheckboxes.forEach(function(cb) {
+            if (cb.checked) {
+                selected = selected.concat(JSON.parse(cb.getAttribute("data-antibodies")));
+            }
+        });
+        if (selected.length === 0) {
+            document.getElementById("fcae-results").style.display = "none";
+            currentList = [];
+            return;
+        }
+        var result = enumerate(selected);
+        currentList = result.unique;
+        document.getElementById("fcae-results").style.display = "block";
+        document.getElementById("fcae-count").textContent = result.count + " billable antibodies";
+        var listEl = document.getElementById("fcae-list");
+        listEl.innerHTML = "";
+        result.unique.forEach(function(ab) {
+            var tag = document.createElement("span");
+            tag.className = "antibody-tag";
+            tag.textContent = ab;
+            listEl.appendChild(tag);
+        });
+    }
+
+    document.getElementById("fcae-copy").addEventListener("click", function() {
+        if (currentList.length === 0) return;
+        var text;
+        if (currentList.length === 1) {
+            text = currentList[0];
+        } else if (currentList.length === 2) {
+            text = currentList[0] + " and " + currentList[1];
+        } else {
+            text = currentList.slice(0, -1).join(", ") + ", and " + currentList[currentList.length - 1];
+        }
+        navigator.clipboard.writeText(text);
+        var btn = document.getElementById("fcae-copy");
+        var original = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(function() { btn.textContent = original; }, 1500);
+    });
+})();
+</script>
+</div>

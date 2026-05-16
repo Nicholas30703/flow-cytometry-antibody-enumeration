@@ -14,6 +14,8 @@
 #fcae-app .count-badge { display: inline-block; background: #0f3460; color: #fff; padding: 0.2rem 0.8rem; border-radius: 12px; font-size: 0.9rem; }
 #fcae-app .copy-btn { background: #0f3460; color: #fff; border: none; padding: 0.3rem 0.8rem; font-size: 0.85rem; border-radius: 6px; cursor: pointer; }
 #fcae-app .copy-btn:hover { background: #16213e; }
+#fcae-app .clear-btn { background: transparent; color: #0f3460; border: 1px solid #0f3460; padding: 0.3rem 0.8rem; font-size: 0.85rem; border-radius: 6px; cursor: pointer; }
+#fcae-app .clear-btn:hover { background: #e8f0fe; }
 #fcae-app .antibody-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 #fcae-app .antibody-tag { background: #e8f0fe; color: #0f3460; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.9rem; font-weight: 500; }
 </style>
@@ -26,6 +28,7 @@
     <div class="results-header">
         <div class="count-badge" id="fcae-count"></div>
         <button class="copy-btn" id="fcae-copy">Copy list to clipboard</button>
+        <button class="clear-btn" id="fcae-clear">Clear selections</button>
     </div>
     <div class="antibody-list" id="fcae-list"></div>
 </div>
@@ -41,9 +44,10 @@
         { name: "Acute Leukemia", antibodies: ["CD3 (cytoplasmic)","CD7","CD13","CD19","CD22 (cytoplasmic)","CD33","CD34","CD45","Myeloperoxidase (cytoplasmic)","TdT (cytoplasmic)"] },
         { name: "Hairy Cell", antibodies: ["CD11c","CD19","CD20","CD22","CD25","CD45","CD79b","CD103","CD123","CD200"] },
         { name: "LGL with TRBC1", antibodies: ["CD3","CD4","CD7","CD8","CD16","CD45","CD56","CD57","TCR-D/G","TRBC1"] },
-        { name: "6-Color Tube 2", antibodies: ["CD10","CD19","CD45","FMC7","kappa (cytoplasmic)","lambda (cytoplasmic)"] },
+        { name: "Hematogone Tube", antibodies: ["CD10","CD19","CD20","CD34","CD38","CD45","CD123"] },
+        { name: "6-Color Tube 2", antibodies: ["CD10","CD19","CD45","FMC7","kappa","lambda"] },
         { name: "6-Color BAL", antibodies: ["CD3","CD4","CD8","CD19","CD45","HLA-DR"] },
-        { name: "6-Color Limited Lymph", antibodies: ["CD5","CD10","CD19","CD45","kappa (cytoplasmic)","lambda (cytoplasmic)"] }
+        { name: "6-Color Limited Lymph", antibodies: ["CD5","CD10","CD19","CD45","kappa","lambda"] }
     ];
 
     function sortKey(s) {
@@ -126,6 +130,11 @@
             listEl.appendChild(tag);
         });
     }
+
+    document.getElementById("fcae-clear").addEventListener("click", function() {
+        panelCheckboxes.forEach(function(cb) { cb.checked = false; });
+        runEnumeration();
+    });
 
     document.getElementById("fcae-copy").addEventListener("click", function() {
         if (currentList.length === 0) return;

@@ -120,7 +120,7 @@
         var result = enumerate(selected);
         currentList = result.unique;
         document.getElementById("fcae-results").style.display = "block";
-        document.getElementById("fcae-count").textContent = result.count + " billable antibodies";
+        document.getElementById("fcae-count").textContent = result.count + " billable " + (result.count === 1 ? "antibody" : "antibodies");
         var listEl = document.getElementById("fcae-list");
         listEl.innerHTML = "";
         result.unique.forEach(function(ab) {
